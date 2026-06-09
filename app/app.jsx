@@ -56,46 +56,105 @@ function ThemeSwitcher({ theme, setTheme, mode, setMode }) {
 
 /* Full app navigator — shown only on non-site surfaces when logged in */
 function AppNavigator({ surface, go, theme, setTheme, mode, setMode, user, logout }) {
+  const { isMobileOrTablet } = window.useViewport();
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  React.useEffect(() => { if (!isMobileOrTablet) setMenuOpen(false); }, [isMobileOrTablet]);
+
   return (
-    <div style={{
-      height:56, flexShrink:0, background:"var(--chrome)", color:"var(--chrome-text)",
-      display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 18px 0 16px",
-      borderBottom:"1px solid rgba(255,255,255,.08)", zIndex:100,
-    }}>
-      <div style={{ display:"flex", alignItems:"center", gap:11, minWidth:200 }}>
-        <button onClick={() => go("site")} style={{ display:"flex", alignItems:"center", gap:11, background:"none", border:"none", cursor:"pointer", color:"inherit", padding:0, fontFamily:"var(--font)" }}>
-          <Logo size={28}/>
-          <span style={{ fontSize:15, fontWeight:500, letterSpacing:"-.01em" }}>Churchora</span>
-        </button>
-        <span style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:".12em", color:"var(--chrome-muted)", border:"1px solid var(--chrome-muted)", padding:"2px 7px", borderRadius:5 }}>Prototype</span>
-      </div>
-      <div style={{ display:"flex", gap:3, background:"rgba(255,255,255,.07)", borderRadius:999, padding:4 }}>
-        {CH.navMain.map(n => {
-          const active = n.id === surface;
-          return (
-            <button key={n.id} type="button" onClick={() => go(n.id)} style={{
-              display:"inline-flex", alignItems:"center", gap:8, border:"none", cursor:"pointer",
-              padding:"8px 16px", borderRadius:999, fontFamily:"var(--font)", fontSize:".88rem", fontWeight:active?400:300,
-              background:active?"var(--primary)":"transparent",
-              color:active?"var(--primary-contrast)":"var(--chrome-muted)",
-              transition:"all var(--dur) var(--ease)", whiteSpace:"nowrap",
-            }}>
-              <Icon name={n.icon} size={16}/>{n.label}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ minWidth:200, display:"flex", justifyContent:"flex-end", alignItems:"center", gap:14 }}>
-        <ThemeSwitcher theme={theme} setTheme={setTheme} mode={mode} setMode={setMode}/>
-        <div style={{ display:"flex", alignItems:"center", gap:9, paddingLeft:14, borderLeft:"1px solid rgba(255,255,255,.12)" }}>
-          <div style={{ width:30, height:30, borderRadius:"50%", background:"var(--primary)", color:"var(--primary-contrast)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:".72rem", fontWeight:600 }}>{user.initials}</div>
-          <span style={{ fontSize:".84rem", color:"var(--chrome-muted)", maxWidth:90, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.name}</span>
-          <button onClick={logout} title="Sign out" style={{ width:30, height:30, borderRadius:"var(--r-xs)", border:"1px solid rgba(255,255,255,.14)", background:"transparent", color:"var(--chrome-muted)", cursor:"pointer", display:"inline-flex", alignItems:"center", justifyContent:"center" }}>
-            <Icon name="log-out" size={14}/>
+    <>
+      <div style={{
+        height:56, flexShrink:0, background:"var(--chrome)", color:"var(--chrome-text)",
+        display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 18px 0 16px",
+        borderBottom:"1px solid rgba(255,255,255,.08)", zIndex:100,
+      }}>
+        {/* Logo */}
+        <div style={{ display:"flex", alignItems:"center", gap:11 }}>
+          <button onClick={() => { go("site"); setMenuOpen(false); }} style={{ display:"flex", alignItems:"center", gap:11, background:"none", border:"none", cursor:"pointer", color:"inherit", padding:0, fontFamily:"var(--font)" }}>
+            <Logo size={28}/>
+            <span style={{ fontSize:15, fontWeight:500, letterSpacing:"-.01em" }}>Churchora</span>
           </button>
+          {!isMobileOrTablet && <span style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:".12em", color:"var(--chrome-muted)", border:"1px solid var(--chrome-muted)", padding:"2px 7px", borderRadius:5 }}>Prototype</span>}
         </div>
+
+        {/* Desktop surface tabs */}
+        {!isMobileOrTablet && (
+          <div style={{ display:"flex", gap:3, background:"rgba(255,255,255,.07)", borderRadius:999, padding:4 }}>
+            {CH.navMain.map(n => {
+              const active = n.id === surface;
+              return (
+                <button key={n.id} type="button" onClick={() => go(n.id)} style={{
+                  display:"inline-flex", alignItems:"center", gap:8, border:"none", cursor:"pointer",
+                  padding:"8px 16px", borderRadius:999, fontFamily:"var(--font)", fontSize:".88rem", fontWeight:active?400:300,
+                  background:active?"var(--primary)":"transparent",
+                  color:active?"var(--primary-contrast)":"var(--chrome-muted)",
+                  transition:"all var(--dur) var(--ease)", whiteSpace:"nowrap",
+                }}>
+                  <Icon name={n.icon} size={16}/>{n.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Desktop right */}
+        {!isMobileOrTablet && (
+          <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:14 }}>
+            <ThemeSwitcher theme={theme} setTheme={setTheme} mode={mode} setMode={setMode}/>
+            <div style={{ display:"flex", alignItems:"center", gap:9, paddingLeft:14, borderLeft:"1px solid rgba(255,255,255,.12)" }}>
+              <div style={{ width:30, height:30, borderRadius:"50%", background:"var(--primary)", color:"var(--primary-contrast)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:".72rem", fontWeight:600 }}>{user.initials}</div>
+              <span style={{ fontSize:".84rem", color:"var(--chrome-muted)", maxWidth:90, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.name}</span>
+              <button onClick={logout} title="Sign out" style={{ width:30, height:30, borderRadius:"var(--r-xs)", border:"1px solid rgba(255,255,255,.14)", background:"transparent", color:"var(--chrome-muted)", cursor:"pointer", display:"inline-flex", alignItems:"center", justifyContent:"center" }}>
+                <Icon name="log-out" size={14}/>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile/tablet right: user avatar + hamburger */}
+        {isMobileOrTablet && (
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:30, height:30, borderRadius:"50%", background:"var(--primary)", color:"var(--primary-contrast)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:".72rem", fontWeight:600 }}>{user.initials}</div>
+            <button onClick={() => setMenuOpen(m => !m)} style={{ width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", color:"var(--chrome-text)" }}>
+              <window.Hamburger open={menuOpen} size={20} color="var(--chrome-text)"/>
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* Mobile dropdown menu */}
+      {isMobileOrTablet && (
+        <div style={{
+          background:"var(--chrome)", borderBottom:"1px solid rgba(255,255,255,.08)",
+          maxHeight: menuOpen ? 500 : 0, overflow:"hidden",
+          transition:"max-height .32s cubic-bezier(.22,.61,.36,1)", zIndex:99, flexShrink:0,
+        }}>
+          <div style={{ padding:"8px 16px 16px" }}>
+            {CH.navMain.map(n => {
+              const active = n.id === surface;
+              return (
+                <button key={n.id} onClick={() => { go(n.id); setMenuOpen(false); }} style={{
+                  display:"flex", alignItems:"center", gap:12, width:"100%",
+                  padding:"13px 12px", borderRadius:"var(--r-sm)", textAlign:"left",
+                  fontFamily:"var(--font)", fontSize:"1rem", fontWeight:active?400:300,
+                  background:active?"rgba(255,255,255,.10)":"transparent",
+                  color:active?"var(--chrome-text)":"var(--chrome-muted)",
+                  borderLeft:"3px solid "+(active?"var(--primary)":"transparent"),
+                  marginBottom:2,
+                }}>
+                  <Icon name={n.icon} size={18}/>{n.label}
+                </button>
+              );
+            })}
+            <div style={{ borderTop:"1px solid rgba(255,255,255,.08)", marginTop:10, paddingTop:14, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <ThemeSwitcher theme={theme} setTheme={setTheme} mode={mode} setMode={setMode}/>
+              <button onClick={() => { logout(); setMenuOpen(false); }} style={{ display:"flex", alignItems:"center", gap:7, color:"var(--chrome-muted)", fontSize:".85rem", padding:"6px 10px", borderRadius:"var(--r-xs)", border:"1px solid rgba(255,255,255,.14)" }}>
+                <Icon name="log-out" size={14}/>Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

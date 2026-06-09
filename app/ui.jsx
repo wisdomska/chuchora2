@@ -228,6 +228,43 @@ function Sparkline({ data, width = 260, height = 70, stroke = "var(--primary)", 
   );
 }
 
+/* ── Viewport hook ── */
+function useViewport() {
+  const [w, setW] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  React.useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn, { passive: true });
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return {
+    w,
+    isMobile:  w < 768,
+    isTablet:  w >= 768 && w < 1024,
+    isDesktop: w >= 1024,
+    isMobileOrTablet: w < 1024,
+  };
+}
+
+/* ── Animated Hamburger → X ── */
+function Hamburger({ open, size = 22, color = "currentColor" }) {
+  const gap = Math.round(size * 0.27);   // gap between bars in flexbox
+  const tx  = gap + 2;                   // translateY to align top/bottom bar to center
+  const bar = (extra = {}) => ({
+    display: "block", width: size, height: 2,
+    background: color, borderRadius: 1,
+    transition: "transform .28s cubic-bezier(.22,.61,.36,1), opacity .18s",
+    ...extra,
+  });
+  return (
+    <span style={{ display: "flex", flexDirection: "column", gap, width: size, lineHeight: 0 }}>
+      <span style={bar({ transform: open ? `translateY(${tx}px) rotate(45deg)`  : "none" })} />
+      <span style={bar({ opacity: open ? 0 : 1, transform: open ? "scaleX(0)" : "none" })} />
+      <span style={bar({ transform: open ? `translateY(-${tx}px) rotate(-45deg)` : "none" })} />
+    </span>
+  );
+}
+
 Object.assign(window, {
   Icon, Logo, Wordmark, Avatar, Btn, Pill, Eyebrow, IconChip, Toggle, Segmented, Sparkline,
+  useViewport, Hamburger,
 });

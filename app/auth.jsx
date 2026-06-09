@@ -1,5 +1,5 @@
 /* Churchora — Auth screen (login / sign up) */
-const { Icon: AIcon, Logo: ALogo } = window;
+const { Icon: AIcon, Logo: ALogo, useViewport: AUseViewport } = window;
 
 function AuthScreen({ onAuth, initialMode = "login", onBack }) {
   const [mode, setMode]       = React.useState(initialMode);
@@ -41,11 +41,13 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
   /* ── testimonial avatars from mock data ── */
   const avatarRow = CH.members.slice(0, 5);
 
+  const { isMobileOrTablet } = AUseViewport();
+
   return (
     <div style={{ height: "100vh", display: "flex", background: "var(--page)", overflow: "hidden" }}>
 
-      {/* ── Left brand panel ── */}
-      <div style={{
+      {/* ── Left brand panel — hidden on mobile/tablet ── */}
+      {!isMobileOrTablet && <div style={{
         flex: "0 0 460px", background: "var(--chrome)", color: "var(--chrome-text)",
         display: "flex", flexDirection: "column", justifyContent: "space-between",
         padding: "48px 52px", position: "relative", overflow: "hidden",
@@ -89,14 +91,22 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
             {" "}across the country.
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ── Right form panel ── */}
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 40px", overflowY:"auto" }}>
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding: isMobileOrTablet ? "32px 24px" : "40px 40px", overflowY:"auto" }}>
         <div style={{ width:"100%", maxWidth:420 }}>
 
-          {/* back to landing */}
-          {onBack && (
+          {/* mobile logo */}
+          {isMobileOrTablet && (
+            <button onClick={onBack} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:28, background:"none", border:"none", cursor:"pointer", color:"inherit", padding:0 }}>
+              <ALogo size={32} />
+              <span style={{ fontSize:18, fontWeight:500, letterSpacing:"-.02em" }}>Churchora</span>
+            </button>
+          )}
+
+          {/* back to landing (desktop) */}
+          {onBack && !isMobileOrTablet && (
             <button onClick={onBack} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"none", border:"none", color:"var(--text-muted)", fontSize:".88rem", cursor:"pointer", padding:"0 0 28px", fontFamily:"var(--font)" }}>
               <AIcon name="chevron-left" size={16} />Back to homepage
             </button>

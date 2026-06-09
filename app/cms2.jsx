@@ -303,10 +303,16 @@ function PlanSettings({ plan, setPlan }) {
 
 /* ---------------- SHELL ---------------- */
 function AdminCMS({ go, theme, setTheme, mode, setMode, openTo = "dashboard" }) {
-  const [page, setPage] = React.useState(openTo);
-  const [plan, setPlan] = React.useState("advanced");
+  const [page, setPage]       = React.useState(openTo);
+  const [plan, setPlan]       = React.useState("advanced");
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const { w } = window.useViewport ? window.useViewport() : { w: 1280 };
+  const isMobile = w < 1024;
   const { CmsSidebar, CmsTopbar } = window.CmsShellParts;
   const { CmsDashboard, CmsMembers, CmsGiving } = window.CmsPages;
+
+  // Close sidebar when navigating on mobile
+  const setPageMobile = (p) => { setPage(p); if (isMobile) setSidebarOpen(false); };
 
   const meta = {
     dashboard: ["Dashboard", "Sunday, 9 June · Grace Chapel International"],
@@ -324,16 +330,47 @@ function AdminCMS({ go, theme, setTheme, mode, setMode, openTo = "dashboard" }) 
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", background: "var(--page)" }}>
-      <CmsSidebar page={page} setPage={setPage} plan={plan} go={go} />
+    <div style={{ height: "100%", display: "flex", background: "var(--page)", position: "relative" }}>
+      {/* Mobile sidebar overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 49, backdropFilter: "blur(2px)" }} />
+      )}
+
+      {/* Sidebar — always visible on desktop; drawer on mobile */}
+      <div style={{
+        position: isMobile ? "absolute" : "relative",
+        left: 0, top: 0, bottom: 0,
+        zIndex: isMobile ? 50 : "auto",
+        transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "none",
+        transition: "transform .3s cubic-bezier(.22,.61,.36,1)",
+        flexShrink: 0,
+        height: "100%",
+      }}>
+        <CmsSidebar page={page} setPage={setPageMobile} plan={plan} go={go} />
+      </div>
+
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <CmsTopbar title={meta[page][0]} sub={meta[page][1]} action={actions[page]} />
+        <CmsTopbar
+          title={meta[page][0]}
+          sub={meta[page][1]}
+          action={
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              {/* Mobile hamburger to open sidebar */}
+              {isMobile && (
+                <button onClick={() => setSidebarOpen(s => !s)} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)" }}>
+                  <window.Hamburger open={sidebarOpen} size={18} />
+                </button>
+              )}
+              {actions[page]}
+            </div>
+          }
+        />
         <div key={page} className="anim-in" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           {page === "dashboard" && <CmsDashboard />}
           {page === "members" && <CmsMembers />}
           {page === "giving" && <CmsGiving />}
           {page === "verses" && <CmsVerses />}
-          {page === "sermon" && <CmsSermonSync go={go} plan={plan} setPage={setPage} />}
+          {page === "sermon" && <CmsSermonSync go={go} plan={plan} setPage={setPageMobile} />}
           {page === "settings" && <CmsSettings theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} plan={plan} setPlan={setPlan} />}
         </div>
       </div>

@@ -1,5 +1,5 @@
 /* Churchora — Member app (interactive themed iPhone) */
-const { Icon: MIcon, Avatar: MAvatar, Pill: MPill, Btn: MBtn, IconChip: MIconChip, Logo: MLogo } = window;
+const { Icon: MIcon, Avatar: MAvatar, Pill: MPill, Btn: MBtn, IconChip: MIconChip, Logo: MLogo, useViewport: MUseViewport } = window;
 
 const TABS = [
   { id: "home", icon: "layout-dashboard", label: "Home" },
@@ -349,9 +349,13 @@ function MemberPhone({ mode, setMode }) {
 }
 
 function MemberApp({ mode, setMode }) {
+  const { w } = MUseViewport();
+  // Scale phone to fit smaller screens
+  const phoneScale = w < 480 ? Math.max((w - 32) / 392, 0.72) : w < 768 ? 0.88 : 1;
+
   return (
     <window.MemberStage>
-      <div style={{ maxWidth: 360, textAlign: "center", alignSelf: "center", marginRight: 8 }} className="member-intro">
+      <div style={{ maxWidth: 360, textAlign: "center", alignSelf: "center", marginRight: 8, display: w < 768 ? "none" : "block" }} className="member-intro">
         <div className="eyebrow" style={{ marginBottom: 12 }}>Member app</div>
         <h2 className="h1" style={{ marginBottom: 14, fontSize: "1.9rem" }}>Church in your pocket.</h2>
         <p className="lead" style={{ fontSize: "1.02rem" }}>Give in seconds with mobile money, read the daily Word, and never miss a birthday. Tap through the live phone — switch themes and dark mode from the top bar.</p>
@@ -364,7 +368,9 @@ function MemberApp({ mode, setMode }) {
           ))}
         </div>
       </div>
-      <MemberPhone mode={mode} setMode={setMode} />
+      <div style={{ transform: `scale(${phoneScale})`, transformOrigin: "top center", flexShrink: 0 }}>
+        <MemberPhone mode={mode} setMode={setMode} />
+      </div>
     </window.MemberStage>
   );
 }
