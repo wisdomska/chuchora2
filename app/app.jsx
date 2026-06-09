@@ -17,7 +17,7 @@ function useAuth() {
 
 function useThemeEngine() {
   const init = loadState();
-  const [theme, setTheme] = React.useState(init.theme || "navy");
+  const [theme, setTheme] = React.useState(init.theme || "orange");
   const [mode, setMode]   = React.useState(init.mode || "light");
   // Always start on "site" — the landing page is public
   const [surface, setSurface] = React.useState("site");
