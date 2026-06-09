@@ -1,8 +1,8 @@
 /* Churchora — Auth screen (login / sign up) */
 const { Icon: AIcon, Logo: ALogo } = window;
 
-function AuthScreen({ onAuth }) {
-  const [mode, setMode]       = React.useState("login");
+function AuthScreen({ onAuth, initialMode = "login", onBack }) {
+  const [mode, setMode]       = React.useState(initialMode);
   const [email, setEmail]     = React.useState("");
   const [password, setPass]   = React.useState("");
   const [name, setName]       = React.useState("");
@@ -94,6 +94,13 @@ function AuthScreen({ onAuth }) {
       {/* ── Right form panel ── */}
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 40px", overflowY:"auto" }}>
         <div style={{ width:"100%", maxWidth:420 }}>
+
+          {/* back to landing */}
+          {onBack && (
+            <button onClick={onBack} style={{ display:"inline-flex", alignItems:"center", gap:6, background:"none", border:"none", color:"var(--text-muted)", fontSize:".88rem", cursor:"pointer", padding:"0 0 28px", fontFamily:"var(--font)" }}>
+              <AIcon name="chevron-left" size={16} />Back to homepage
+            </button>
+          )}
 
           {/* heading */}
           <div className="anim-up" style={{ marginBottom:32 }}>
