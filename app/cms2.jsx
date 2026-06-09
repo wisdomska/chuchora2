@@ -168,16 +168,19 @@ function ThemeCard({ t, active, mode, onClick }) {
       border: "1.5px solid " + (active ? "var(--primary)" : "var(--border)"), borderRadius: "var(--r-md)", background: "var(--surface)",
       boxShadow: active ? "0 0 0 3px var(--ring)" : "none", transition: "all var(--dur) var(--ease)",
     }}>
-      {/* mini preview */}
-      <div data-theme={t.id} data-mode={mode} style={{ height: 96, background: "var(--page)", padding: 12, display: "flex", gap: 8 }}>
-        <div style={{ width: 26, background: "var(--chrome)", borderRadius: 5 }} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ height: 8, width: "60%", background: "var(--text)", opacity: .25, borderRadius: 3 }} />
-          <div style={{ display: "flex", gap: 6 }}>
-            <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 5, height: 38 }} />
-            <div style={{ width: 40, background: "var(--primary)", borderRadius: 5, height: 38 }} />
+      {/* mini preview — data-theme/data-mode scope the CSS tokens to this card's theme */}
+      <div data-theme={t.id} data-mode={mode} style={{ height: 100, background: "var(--page)", padding: 12, display: "flex", gap: 8, borderRadius: "calc(var(--r-md) - 1px)" }}>
+        <div style={{ width: 28, background: "var(--chrome)", borderRadius: 5, flexShrink: 0 }} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
+          {/* title bar mock */}
+          <div style={{ height: 8, width: "62%", background: "var(--text)", opacity: .45, borderRadius: 3 }} />
+          {/* content row */}
+          <div style={{ display: "flex", gap: 6, flex: 1 }}>
+            <div style={{ flex: 1, background: "var(--surface)", border: "1.5px solid var(--border-strong)", borderRadius: 5 }} />
+            <div style={{ width: 38, background: "var(--primary)", borderRadius: 5, opacity: .95 }} />
           </div>
-          <div style={{ height: 6, width: "40%", background: "var(--text)", opacity: .15, borderRadius: 3 }} />
+          {/* subtitle bar mock */}
+          <div style={{ height: 6, width: "45%", background: "var(--text)", opacity: .30, borderRadius: 3 }} />
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", borderTop: "1px solid var(--border)" }}>
