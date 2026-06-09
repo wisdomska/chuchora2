@@ -276,8 +276,12 @@ function Hero({ go, scrollY }) {
             <Pill kind="primary">New</Pill>
             <span style={{ fontSize:".84rem", color:"var(--text-muted)" }}>Sermon live-sync is here</span>
           </div>
-          <h1 className="display-xl anim-up" style={{ animationDelay:".05s", marginBottom:22 }}>
-            The Complete Home<br/>For Your Church.
+          <h1 className="anim-up" style={{
+            animationDelay:".05s", marginBottom:22,
+            fontSize:"clamp(3.2rem, 6.5vw, 5.2rem)",
+            lineHeight:1.0, letterSpacing:"-.03em", fontWeight:400,
+          }}>
+            Church<br/>Management<br/>Made Easier
           </h1>
           <p className="lead anim-up" style={{ animationDelay:".12s", maxWidth:480, marginBottom:34 }}>
             Churchora brings giving, members, scripture and Sunday service into one quiet, beautiful place — so your team can tend to people, not paperwork.
