@@ -192,7 +192,7 @@ function Hero({ go }) {
             <span style={{ fontSize: ".84rem", color: "var(--text-muted)" }}>Sermon live-sync is here</span>
           </div>
           <h1 className="display-xl anim-up" style={{ animationDelay: ".05s", marginBottom: 22 }}>
-            The calm, complete<br />home for your church.
+            The Complete Home<br />For Your Church.
           </h1>
           <p className="lead anim-up" style={{ animationDelay: ".12s", maxWidth: 480, marginBottom: 34 }}>
             Churchora brings giving, members, scripture and Sunday service into one quiet, beautiful place — so your team can tend to people, not paperwork.
@@ -216,15 +216,50 @@ function Hero({ go }) {
   );
 }
 
+/* Count-up number that animates in when scrolled into view */
+function CountUp({ target, prefix = "", suffix = "", decimals = 0, duration = 1600 }) {
+  const [val, setVal]    = React.useState(0);
+  const ref              = React.useRef(null);
+  const started          = React.useRef(false);
+
+  React.useEffect(() => {
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || started.current) return;
+      started.current = true;
+      const t0 = performance.now();
+      const tick = (now) => {
+        const p = Math.min((now - t0) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+        setVal(+(eased * target).toFixed(decimals));
+        if (p < 1) requestAnimationFrame(tick);
+        else setVal(target);
+      };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.4 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [target, duration, decimals]);
+
+  const display = decimals > 0 ? val.toFixed(decimals) : Math.floor(val).toLocaleString();
+  return <span ref={ref}>{prefix}{display}{suffix}</span>;
+}
+
 function TrustStrip() {
-  const items = [["1,200+", "Congregations"], ["GHS 4.2M", "Given monthly"], ["68,000", "Members served"], ["99.9%", "Uptime"]];
+  const items = [
+    { target: 1200,  prefix: "",    suffix: "+",  decimals: 0, label: "Congregations"  },
+    { target: 4.2,   prefix: "GHS ", suffix: "M", decimals: 1, label: "Given monthly"  },
+    { target: 68000, prefix: "",    suffix: "",   decimals: 0, label: "Members served" },
+    { target: 99.9,  prefix: "",    suffix: "%",  decimals: 1, label: "Uptime"         },
+  ];
   return (
     <Container>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24, padding: "30px 0", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
-        {items.map(([n, l]) => (
-          <div key={l} style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "1.9rem", fontWeight: 500, letterSpacing: "-.025em" }}>{n}</div>
-            <div className="eyebrow" style={{ marginTop: 4 }}>{l}</div>
+        {items.map(item => (
+          <div key={item.label} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.9rem", fontWeight: 500, letterSpacing: "-.025em" }}>
+              <CountUp target={item.target} prefix={item.prefix} suffix={item.suffix} decimals={item.decimals} />
+            </div>
+            <div className="eyebrow" style={{ marginTop: 4 }}>{item.label}</div>
           </div>
         ))}
       </div>

@@ -323,15 +323,16 @@ function MemberPhone({ mode, setMode }) {
   const [tab, setTab] = React.useState("home");
   const [birthdays, setBirthdays] = React.useState(CH.birthdays);
   const [toast, setToast] = React.useState("");
+  const [scrollY, setScrollY] = React.useState(0);
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(""), 2200); };
   const onWish = (b) => { setBirthdays(bs => bs.map(x => x.id === b.id ? { ...x, wished: true } : x)); if (!b.wished) showToast("Birthday wish sent to " + b.name.split(" ")[0]); };
-  // keep home reading fresh birthday state via CH override
   CH.birthdays = birthdays;
 
   return (
-    <window.IOSDevice dark={mode === "dark"} width={392} height={830}>
+    <window.IOSDevice dark={mode === "dark"} width={392} height={830} scrollY={scrollY}>
       <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--page)", color: "var(--text)", position: "relative" }}>
-        <div className="scroll-area" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div className="scroll-area" style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}
+          onScroll={e => setScrollY(e.currentTarget.scrollTop)}>
           <div key={tab} className="anim-in" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {tab === "home" && <MemberHome setTab={setTab} onWish={onWish} />}
             {tab === "give" && <MemberGive done={() => showToast("Gift recorded — receipt saved")} />}

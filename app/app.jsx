@@ -2,6 +2,14 @@
 const { Icon, Logo } = window;
 const LS = "churchora.v1";
 
+function useAuth() {
+  const init = loadState();
+  const [user, setUser] = React.useState(init.user || null);
+  const login  = (u) => { saveState({ ...loadState(), user: u }); setUser(u); };
+  const logout = ()  => { saveState({ ...loadState(), user: null }); setUser(null); };
+  return { user, login, logout };
+}
+
 function loadState() {
   try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; }
 }
@@ -47,7 +55,7 @@ function ThemeSwitcher({ theme, setTheme, mode, setMode, compact }) {
   );
 }
 
-function Navigator({ surface, setSurface, theme, setTheme, mode, setMode }) {
+function Navigator({ surface, setSurface, theme, setTheme, mode, setMode, user, logout }) {
   return (
     <div style={{
       height: 56, flexShrink: 0, background: "var(--chrome)", color: "var(--chrome-text)",
@@ -75,8 +83,17 @@ function Navigator({ surface, setSurface, theme, setTheme, mode, setMode }) {
           );
         })}
       </div>
-      <div style={{ minWidth: 200, display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ minWidth: 200, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 }}>
         <ThemeSwitcher theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} />
+        {user && (
+          <div style={{ display: "flex", alignItems: "center", gap: 9, paddingLeft: 14, borderLeft: "1px solid rgba(255,255,255,.12)" }}>
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--primary)", color: "var(--primary-contrast)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".72rem", fontWeight: 600 }}>{user.initials}</div>
+            <span style={{ fontSize: ".84rem", color: "var(--chrome-muted)", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</span>
+            <button onClick={logout} title="Sign out" style={{ width: 30, height: 30, borderRadius: "var(--r-xs)", border: "1px solid rgba(255,255,255,.14)", background: "transparent", color: "var(--chrome-muted)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="log-out" size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -104,9 +121,15 @@ function MemberStage({ children }) {
 window.MemberStage = MemberStage;
 
 function App() {
-  const eng = useThemeEngine();
+  const eng  = useThemeEngine();
+  const auth = useAuth();
   const { surface, setSurface, theme, setTheme, mode, setMode } = eng;
+  const { user, login, logout } = auth;
   const go = (s) => setSurface(s);
+
+  if (!user) {
+    return <window.AuthScreen onAuth={login} />;
+  }
 
   const surfaces = {
     site: window.MarketingSite,
@@ -118,7 +141,7 @@ function App() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--page)" }}>
-      <Navigator surface={surface} setSurface={setSurface} theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} />
+      <Navigator surface={surface} setSurface={setSurface} theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} user={user} logout={logout} />
       <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
         <div key={surface + theme + mode} className="anim-in" style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
           {Comp ? <Comp go={go} theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} /> : <StubSurface label={surface} />}
