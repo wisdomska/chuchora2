@@ -324,7 +324,7 @@ function AdminCMS({ go, theme, setTheme, mode, setMode, openTo = "dashboard" }) 
 
   return (
     <div style={{ height: "100%", display: "flex", background: "var(--page)" }}>
-      <CmsSidebar page={page} setPage={setPage} plan={plan} />
+      <CmsSidebar page={page} setPage={setPage} plan={plan} go={go} />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <CmsTopbar title={meta[page][0]} sub={meta[page][1]} action={actions[page]} />
         <div key={page} className="anim-in" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>

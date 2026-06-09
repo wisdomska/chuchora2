@@ -54,11 +54,11 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
         <div style={{ position:"absolute", bottom:-160, right:-100, width:480, height:480, borderRadius:"50%", background:"radial-gradient(circle,var(--primary) 0%,transparent 65%)", opacity:.22, pointerEvents:"none" }} />
         <div style={{ position:"absolute", top:-80, left:-80, width:300, height:300, borderRadius:"50%", background:"radial-gradient(circle,var(--primary) 0%,transparent 70%)", opacity:.12, pointerEvents:"none" }} />
 
-        {/* logo */}
-        <div style={{ display:"flex", alignItems:"center", gap:12, position:"relative" }}>
+        {/* logo — click to go back to landing */}
+        <button onClick={onBack} style={{ display:"flex", alignItems:"center", gap:12, position:"relative", background:"none", border:"none", cursor:"pointer", color:"inherit", padding:0 }}>
           <ALogo size={38} />
           <span style={{ fontSize:21, fontWeight:500, letterSpacing:"-.02em" }}>Churchora</span>
-        </div>
+        </button>
 
         {/* verse quote */}
         <div style={{ position:"relative" }}>

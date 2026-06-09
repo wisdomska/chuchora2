@@ -290,13 +290,13 @@ function SermonMode({ go }) {
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--chrome)", color: "var(--chrome-text)" }}>
       {/* header */}
       <div style={{ height: 58, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <button onClick={() => go("site")} style={{ display: "flex", alignItems: "center", gap: 14, background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0 }}>
           <SLogo size={28} />
-          <div>
+          <div style={{ textAlign: "left" }}>
             <div style={{ fontSize: ".95rem", fontWeight: 500 }}>The Lord is my Shepherd</div>
             <div style={{ fontSize: ".76rem", color: "var(--chrome-muted)" }}>Sunday service · Pastor Yaw</div>
           </div>
-        </div>
+        </button>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: ".8rem", fontWeight: 500, color: "#ff5d52" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff5d52", boxShadow: "0 0 0 0 rgba(255,93,82,.6)", animation: "pulse 1.8s infinite" }} />LIVE

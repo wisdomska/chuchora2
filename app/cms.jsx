@@ -1,16 +1,16 @@
 /* Churchora — Admin CMS (desktop) */
 const { Icon: CIcon, Avatar: CAvatar, Pill: CPill, Btn: CBtn, IconChip: CChip, Logo: CLogo, Sparkline: CSpark, Eyebrow: CEyebrow, Segmented: CSeg, Toggle: CToggle } = window;
 
-function CmsSidebar({ page, setPage, plan }) {
+function CmsSidebar({ page, setPage, plan, go }) {
   return (
     <div style={{ width: 232, flexShrink: 0, background: "var(--chrome)", color: "var(--chrome-text)", display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ padding: "20px 18px 18px", display: "flex", alignItems: "center", gap: 11 }}>
+      <button onClick={() => go && go("site")} style={{ padding: "20px 18px 18px", display: "flex", alignItems: "center", gap: 11, background: "none", border: "none", cursor: "pointer", color: "inherit", textAlign: "left", width: "100%" }}>
         <CLogo size={32} />
         <div>
           <div style={{ fontWeight: 500, fontSize: 15 }}>Churchora</div>
           <div style={{ fontSize: 11, color: "var(--chrome-muted)" }}>Grace Chapel</div>
         </div>
-      </div>
+      </button>
       <div style={{ flex: 1, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
         {CH.cmsNav.map(n => {
           const active = n.id === page;
