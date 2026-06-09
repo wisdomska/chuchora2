@@ -577,27 +577,8 @@ function ContactSection() {
 }
 
 /* ─────────────────────────────────────────────
-   CTA Band + Footer
+   Footer
 ───────────────────────────────────────────── */
-function CTABand({ go }) {
-  return (
-    <AnimSection padding="40px 0 110px">
-      <Container>
-        <Reveal>
-          <div style={{ textAlign:"center", padding:"72px 32px", background:"var(--primary-tint)", borderRadius:"var(--r-xl)", position:"relative", overflow:"hidden" }}>
-            <Logo size={56} style={{ marginBottom:24, display:"inline-flex" }}/>
-            <h2 className="display" style={{ marginBottom:16, maxWidth:560, marginLeft:"auto", marginRight:"auto" }}>Give your church a quieter Sunday.</h2>
-            <p className="lead" style={{ maxWidth:460, margin:"0 auto 32px" }}>Set up in minutes. Free forever for small fellowships.</p>
-            <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-              <Btn variant="primary" size="lg" iconRight="arrow-right" onClick={() => go("cms")}>Start free</Btn>
-              <Btn variant="ghost" size="lg" onClick={() => go("member")}>Tour the app</Btn>
-            </div>
-          </div>
-        </Reveal>
-      </Container>
-    </AnimSection>
-  );
-}
 
 function SiteFooter() {
   const cols = {
@@ -651,7 +632,6 @@ function MarketingSite({ go, user, onSignIn, goToSettings, theme, setTheme, mode
       <SermonShowcase go={go}/>
       <Pricing go={go}/>
       <ContactSection/>
-      <CTABand go={go}/>
       <SiteFooter/>
     </div>
   );
