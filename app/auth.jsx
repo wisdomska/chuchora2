@@ -11,21 +11,20 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
   const prefs = React.useRef(readPrefs()).current;
 
   const [mode, setMode]       = React.useState(initialMode);
-  // Autofill: pre-fill the last-used email when the option was enabled.
-  const [email, setEmail]     = React.useState(prefs.autofill ? (prefs.email || "") : "");
+  // Autofill happens silently in the background — always pre-fill the last-used email.
+  const [email, setEmail]     = React.useState(prefs.email || "");
   const [password, setPass]   = React.useState("");
   const [name, setName]       = React.useState("");
   const [church, setChurch]   = React.useState("");
   const [error, setError]     = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [showPass, setShow]   = React.useState(false);
-  // Stay signed in across reloads / autofill email next time (default on).
+  // Stay signed in across reloads (default on).
   const [remember, setRemember] = React.useState(prefs.remember !== false);
-  const [autofill, setAutofill] = React.useState(prefs.autofill !== false);
 
-  // Persist the login preferences (and email, when autofill is on) for next visit.
+  // Persist login preferences + last-used email for next visit (silent autofill).
   const savePrefs = (emailToSave) => {
-    writePrefs({ remember, autofill, email: autofill ? (emailToSave || "") : "" });
+    writePrefs({ remember, email: emailToSave || "" });
   };
 
   const clearErr = () => setError("");
@@ -251,12 +250,7 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
             </div>
 
             <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
-                <label className="eyebrow">Password</label>
-                {mode === "login" && (
-                  <span style={{ fontSize:".82rem", color:"var(--primary)", cursor:"pointer" }}>Forgot password?</span>
-                )}
-              </div>
+              <label className="eyebrow" style={{ display:"block", marginBottom:7 }}>Password</label>
               <div style={{ position:"relative" }}>
                 <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"var(--text-subtle)" }}><AIcon name="lock" size={17} /></span>
                 <input
@@ -274,23 +268,12 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
                   <AIcon name={showPass ? "eye-off" : "eye"} size={17} />
                 </button>
               </div>
+              {mode === "login" && (
+                <div style={{ display:"flex", justifyContent:"flex-end", marginTop:8 }}>
+                  <span style={{ fontSize:".82rem", color:"var(--primary)", cursor:"pointer" }}>Forgot password?</span>
+                </div>
+              )}
             </div>
-
-            {/* remember me + autofill (login only) */}
-            {mode === "login" && (
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:".86rem", color:"var(--text-muted)", cursor:"pointer", userSelect:"none" }}>
-                  <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
-                    style={{ accentColor:"var(--primary)", width:15, height:15, cursor:"pointer" }} />
-                  Keep me signed in
-                </label>
-                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:".86rem", color:"var(--text-muted)", cursor:"pointer", userSelect:"none" }}>
-                  <input type="checkbox" checked={autofill} onChange={e => setAutofill(e.target.checked)}
-                    style={{ accentColor:"var(--primary)", width:15, height:15, cursor:"pointer" }} />
-                  Autofill my email
-                </label>
-              </div>
-            )}
 
             {/* error */}
             {error && (
@@ -308,6 +291,15 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
                 </span>
               ) : mode === "login" ? "Sign in" : "Create account"}
             </button>
+
+            {/* keep me signed in — beneath the sign-in button, left aligned */}
+            {mode === "login" && (
+              <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:".86rem", color:"var(--text-muted)", cursor:"pointer", userSelect:"none", marginTop:2 }}>
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+                  style={{ accentColor:"var(--primary)", width:15, height:15, cursor:"pointer" }} />
+                Keep me signed in
+              </label>
+            )}
           </form>
 
           {/* divider */}
