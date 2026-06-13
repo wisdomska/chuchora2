@@ -104,7 +104,13 @@ function GivingChart() {
 }
 
 function FundBreakdown() {
-  const data = [["Tithe", 62, "var(--primary)"], ["Offering", 21, "var(--accent)"], ["Building", 10, "var(--info)"], ["Missions", 7, "var(--success)"]];
+  // Shades & tints of the theme primary — darkest shade for the largest fund, lightest tint for the smallest.
+  const data = [
+    ["Tithe",    62, "color-mix(in srgb, var(--primary) 84%, black)"],
+    ["Offering", 21, "var(--primary)"],
+    ["Building", 10, "color-mix(in srgb, var(--primary) 55%, white)"],
+    ["Missions",  7, "color-mix(in srgb, var(--primary) 32%, white)"],
+  ];
   return (
     <div className="card card-pad" style={{ borderRadius: "var(--r-md)" }}>
       <h3 style={{ fontSize: "1.1rem", marginBottom: 16 }}>By fund</h3>
