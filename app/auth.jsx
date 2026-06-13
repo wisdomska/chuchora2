@@ -1,15 +1,32 @@
 /* Churchora — Auth screen (login / sign up) */
 const { Icon: AIcon, Logo: ALogo, useViewport: AUseViewport } = window;
 
+const PREFS_KEY = "churchora.loginPrefs";
+function readPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
+}
+function writePrefs(p) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {} }
+
 function AuthScreen({ onAuth, initialMode = "login", onBack }) {
+  const prefs = React.useRef(readPrefs()).current;
+
   const [mode, setMode]       = React.useState(initialMode);
-  const [email, setEmail]     = React.useState("");
+  // Autofill: pre-fill the last-used email when the option was enabled.
+  const [email, setEmail]     = React.useState(prefs.autofill ? (prefs.email || "") : "");
   const [password, setPass]   = React.useState("");
   const [name, setName]       = React.useState("");
   const [church, setChurch]   = React.useState("");
   const [error, setError]     = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [showPass, setShow]   = React.useState(false);
+  // Stay signed in across reloads / autofill email next time (default on).
+  const [remember, setRemember] = React.useState(prefs.remember !== false);
+  const [autofill, setAutofill] = React.useState(prefs.autofill !== false);
+
+  // Persist the login preferences (and email, when autofill is on) for next visit.
+  const savePrefs = (emailToSave) => {
+    writePrefs({ remember, autofill, email: autofill ? (emailToSave || "") : "" });
+  };
 
   const clearErr = () => setError("");
 
@@ -57,13 +74,14 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
               });
               const data = await r.json();
               if (r.ok && data.ok) {
+                savePrefs(data.email);
                 onAuth({
                   email: data.email,
                   name: data.name,
                   church: church.trim() || "Grace Chapel International",
                   initials: data.initials,
                   picture: data.picture,
-                });
+                }, remember);
               } else {
                 setError(data.error || "Google sign-in failed. Please try again.");
               }
@@ -107,12 +125,13 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
     setError(""); setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      savePrefs(email);
       onAuth({
         email,
         name: name.trim() || email.split("@")[0],
         church: church.trim() || "Grace Chapel International",
         initials: (name.trim() || email.split("@")[0]).split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
-      });
+      }, remember);
     }, 950);
   };
 
@@ -226,7 +245,7 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
               <label className="eyebrow" style={{ display:"block", marginBottom:7 }}>Email address</label>
               <div style={{ position:"relative" }}>
                 <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"var(--text-subtle)" }}><AIcon name="mail" size={17} /></span>
-                <input type="email" value={email} onChange={e => { setEmail(e.target.value); clearErr(); }}
+                <input type="email" name="email" value={email} onChange={e => { setEmail(e.target.value); clearErr(); }}
                   placeholder="you@church.org" className="field" style={{ paddingLeft:40 }} autoComplete="email" />
               </div>
             </div>
@@ -242,6 +261,7 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
                 <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"var(--text-subtle)" }}><AIcon name="lock" size={17} /></span>
                 <input
                   type={showPass ? "text" : "password"}
+                  name="password"
                   value={password} onChange={e => { setPass(e.target.value); clearErr(); }}
                   placeholder={mode === "signup" ? "Minimum 6 characters" : "••••••••"}
                   className="field" style={{ paddingLeft:40, paddingRight:46 }}
@@ -255,6 +275,22 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
                 </button>
               </div>
             </div>
+
+            {/* remember me + autofill (login only) */}
+            {mode === "login" && (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:".86rem", color:"var(--text-muted)", cursor:"pointer", userSelect:"none" }}>
+                  <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+                    style={{ accentColor:"var(--primary)", width:15, height:15, cursor:"pointer" }} />
+                  Keep me signed in
+                </label>
+                <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:".86rem", color:"var(--text-muted)", cursor:"pointer", userSelect:"none" }}>
+                  <input type="checkbox" checked={autofill} onChange={e => setAutofill(e.target.checked)}
+                    style={{ accentColor:"var(--primary)", width:15, height:15, cursor:"pointer" }} />
+                  Autofill my email
+                </label>
+              </div>
+            )}
 
             {/* error */}
             {error && (

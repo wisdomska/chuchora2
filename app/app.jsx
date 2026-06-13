@@ -7,11 +7,35 @@ function loadState() {
 }
 function saveState(s) { try { localStorage.setItem(LS, JSON.stringify(s)); } catch {} }
 
+const SESSION_KEY = "churchora.session";
+
+function readSession() {
+  // localStorage persists across browser restarts ("remember me");
+  // sessionStorage lasts only for the tab when "remember me" is off.
+  try {
+    const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 function useAuth() {
-  // Always start signed out — session is not persisted across page loads
-  const [user, setUser] = React.useState(null);
-  const login  = (u) => { setUser(u); };
-  const logout = ()  => { setUser(null); };
+  // Restore a remembered session so a page reload keeps you signed in.
+  const [user, setUser] = React.useState(readSession);
+
+  const login = (u, remember = true) => {
+    setUser(u);
+    try {
+      const raw = JSON.stringify(u);
+      if (remember) { localStorage.setItem(SESSION_KEY, raw); sessionStorage.removeItem(SESSION_KEY); }
+      else          { sessionStorage.setItem(SESSION_KEY, raw); localStorage.removeItem(SESSION_KEY); }
+    } catch {}
+  };
+
+  const logout = () => {
+    setUser(null);
+    try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch {}
+  };
+
   return { user, login, logout };
 }
 
@@ -207,8 +231,8 @@ function App() {
     setSurface("cms");
   }, [user]);
 
-  const handleAuth = (userData) => {
-    login(userData);
+  const handleAuth = (userData, remember = true) => {
+    login(userData, remember);
     setShowAuth(false);
     const dest = pendingSurf || "cms";
     setPending(null);
