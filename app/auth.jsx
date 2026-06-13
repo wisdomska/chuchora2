@@ -13,6 +13,86 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
 
   const clearErr = () => setError("");
 
+  /* ── Google Sign-In (authorization-code flow, verified server-side) ── */
+  const [googleLoading, setGoogleLoading] = React.useState(false);
+  const codeClientRef = React.useRef(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function setupGoogle() {
+      try {
+        // The public client id lives in a Vercel env var, served by our function.
+        const cfgRes = await fetch("/api/auth/google");
+        if (!cfgRes.ok) return; // backend not configured yet — button will report it on click
+        const { clientId } = await cfgRes.json();
+        if (cancelled || !clientId) return;
+
+        // Wait for the GIS script to finish loading.
+        const ready = await new Promise((resolve) => {
+          let tries = 0;
+          const t = setInterval(() => {
+            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+              clearInterval(t); resolve(true);
+            } else if (++tries > 100) { clearInterval(t); resolve(false); }
+          }, 100);
+        });
+        if (cancelled || !ready) return;
+
+        codeClientRef.current = window.google.accounts.oauth2.initCodeClient({
+          client_id: clientId,
+          scope: "openid email profile",
+          ux_mode: "popup",
+          callback: async (resp) => {
+            if (resp.error || !resp.code) {
+              if (resp.error !== "access_denied") setError("Google sign-in was cancelled or failed.");
+              setGoogleLoading(false);
+              return;
+            }
+            try {
+              const r = await fetch("/api/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: resp.code }),
+              });
+              const data = await r.json();
+              if (r.ok && data.ok) {
+                onAuth({
+                  email: data.email,
+                  name: data.name,
+                  church: church.trim() || "Grace Chapel International",
+                  initials: data.initials,
+                  picture: data.picture,
+                });
+              } else {
+                setError(data.error || "Google sign-in failed. Please try again.");
+              }
+            } catch (e) {
+              setError("Could not reach the sign-in service. Please try again.");
+            } finally {
+              setGoogleLoading(false);
+            }
+          },
+        });
+      } catch (e) {
+        /* leave button disabled-on-click messaging to the handler */
+      }
+    }
+
+    setupGoogle();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleGoogle = () => {
+    setError("");
+    if (!codeClientRef.current) {
+      setError("Google sign-in isn't ready yet. Check that the server is configured, then retry.");
+      return;
+    }
+    setGoogleLoading(true);
+    codeClientRef.current.requestCode();
+  };
+
   const validate = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
     if (password.length < 6) return "Password must be at least 6 characters.";
@@ -202,14 +282,21 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
           </div>
 
           {/* Google SSO */}
-          <button className="btn btn-ghost btn-lg btn-block" style={{ gap:10 }}>
-            <svg width="20" height="20" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 9.5c3.1 0 5.8 1.1 8 2.8l6-6C34.4 3.1 29.5 1 24 1 15.1 1 7.4 6.2 3.7 13.9l7 5.4C12.5 13.3 17.8 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-16.9z"/>
-              <path fill="#FBBC05" d="M10.7 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7-5.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l8.1-6.1z"/>
-              <path fill="#34A853" d="M24 47c5.5 0 10.1-1.8 13.5-4.9l-7.4-5.7c-1.9 1.3-4.3 2.1-6.1 2.1-6.2 0-11.5-3.8-13.3-9.8l-8.1 6.1C7.4 41.8 15.1 47 24 47z"/>
-            </svg>
-            Continue with Google
+          <button type="button" onClick={handleGoogle} disabled={googleLoading} className="btn btn-ghost btn-lg btn-block" style={{ gap:10 }}>
+            {googleLoading ? (
+              <span style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ width:18, height:18, borderRadius:"50%", border:"2.5px solid var(--border)", borderTopColor:"var(--text)", animation:"ch-spin .7s linear infinite", display:"inline-block" }} />
+                Connecting to Google…
+              </span>
+            ) : (<>
+              <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.1 0 5.8 1.1 8 2.8l6-6C34.4 3.1 29.5 1 24 1 15.1 1 7.4 6.2 3.7 13.9l7 5.4C12.5 13.3 17.8 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-16.9z"/>
+                <path fill="#FBBC05" d="M10.7 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7-5.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l8.1-6.1z"/>
+                <path fill="#34A853" d="M24 47c5.5 0 10.1-1.8 13.5-4.9l-7.4-5.7c-1.9 1.3-4.3 2.1-6.1 2.1-6.2 0-11.5-3.8-13.3-9.8l-8.1 6.1C7.4 41.8 15.1 47 24 47z"/>
+              </svg>
+              Continue with Google
+            </>)}
           </button>
 
           {/* mode toggle */}
