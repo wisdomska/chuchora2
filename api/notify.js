@@ -16,9 +16,30 @@
  *   NOTIFY_FROM     — verified Resend sender (defaults to onboarding@resend.dev)
  */
 
+const https = require("https");
+
 const RESEND_URL = "https://api.resend.com/emails";
 const DEFAULT_TO = "wisdomska@gmail.com";
 const DEFAULT_FROM = "Churchora <onboarding@resend.dev>";
+
+// POST JSON via the raw https module — unlike fetch/undici it does NOT strip
+// "forbidden" headers (Origin/Referer), which FormSubmit requires.
+function postJson(urlStr, headers, bodyObj) {
+  return new Promise((resolve) => {
+    const u = new URL(urlStr);
+    const payload = JSON.stringify(bodyObj);
+    const req = https.request({
+      hostname: u.hostname, path: u.pathname + u.search, method: "POST",
+      headers: { ...headers, "Content-Length": Buffer.byteLength(payload) },
+    }, (resp) => {
+      let d = "";
+      resp.on("data", (c) => { d += c; });
+      resp.on("end", () => { let j = {}; try { j = JSON.parse(d); } catch (e) {} resolve({ status: resp.statusCode, json: j }); });
+    });
+    req.on("error", (e) => resolve({ status: 0, json: {}, error: String(e) }));
+    req.write(payload); req.end();
+  });
+}
 
 const isEmail = (s) => typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 const esc = (s) => String(s == null ? "" : s)
@@ -91,27 +112,22 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Path 2: FormSubmit (keyless fallback) ──
-    // FormSubmit blocks requests without a browser-like Origin/Referer/UA, so
-    // we present the site's origin (Node fetch permits setting these headers).
+    // FormSubmit blocks requests without a browser-like Origin/Referer/UA.
     const site = "https://churchora2.vercel.app";
-    const r = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(to), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Origin": site,
-        "Referer": site + "/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-      },
-      body: JSON.stringify({ _subject: subject, _captcha: "false", _template: "table", _replyto: email, ...fields }),
-    });
-    const data = await r.json().catch(() => ({}));
-    // success === "true" means delivered; the activation notice means it was
+    const resp = await postJson("https://formsubmit.co/ajax/" + encodeURIComponent(to), {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Origin": site,
+      "Referer": site + "/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    }, { _subject: subject, _captcha: "false", _template: "table", _replyto: email, ...fields });
+    const data = resp.json || {};
+    // success === "true" means delivered; an "activation" notice means it was
     // accepted but the inbox still needs a one-time "Activate Form" click.
     const msg = String(data.message || "");
-    const accepted = r.ok && (data.success === true || data.success === "true" || /activat/i.test(msg));
+    const accepted = resp.status === 200 && (data.success === true || data.success === "true" || /activat/i.test(msg));
     if (accepted) return res.status(200).json({ ok: true, via: "formsubmit", pending: /activat/i.test(msg) || undefined });
-    return res.status(502).json({ error: "Could not send the email.", detail: msg || ("HTTP " + r.status) });
+    return res.status(502).json({ error: "Could not send the email.", detail: msg || ("HTTP " + resp.status) });
   } catch (err) {
     return res.status(500).json({ error: "Email send failed.", detail: String((err && err.message) || err) });
   }
