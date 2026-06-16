@@ -3,15 +3,17 @@
  *
  *   POST /api/notify   body: { type: "waitlist" | "contact", ...fields }
  *
- * Sends the submission to the church inbox via Resend. The API key stays
- * server-side. Works with Resend's shared sender (onboarding@resend.dev) as
- * long as the destination is your own verified Resend account email.
+ * Delivers Contact + Member-App-waitlist submissions to the church inbox.
+ * Two delivery paths, picked automatically:
+ *   1. Resend  — used when RESEND_API_KEY is set (professional, recommended).
+ *   2. FormSubmit — keyless fallback so email works with zero configuration.
+ *      (FormSubmit sends a one-time "activate" email to the destination the
+ *       first time; after it's confirmed once, all submissions arrive.)
  *
- * Required env var (Vercel project settings):
- *   RESEND_API_KEY   — from https://resend.com/api-keys
- * Optional:
- *   NOTIFY_TO        — destination inbox (defaults to wisdomska@gmail.com)
- *   NOTIFY_FROM      — verified sender (defaults to onboarding@resend.dev)
+ * Env (all optional):
+ *   RESEND_API_KEY  — enables the Resend path
+ *   NOTIFY_TO       — destination inbox (defaults to wisdomska@gmail.com)
+ *   NOTIFY_FROM     — verified Resend sender (defaults to onboarding@resend.dev)
  */
 
 const RESEND_URL = "https://api.resend.com/emails";
@@ -20,8 +22,7 @@ const DEFAULT_FROM = "Churchora <onboarding@resend.dev>";
 
 const isEmail = (s) => typeof s === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 const esc = (s) => String(s == null ? "" : s)
-  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;");
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function row(label, value) {
   if (!value) return "";
@@ -37,11 +38,6 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "Email is not configured on the server (missing RESEND_API_KEY)." });
-  }
-
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
 
   // Honeypot — bots fill hidden fields; pretend success and drop silently.
@@ -55,44 +51,55 @@ module.exports = async function handler(req, res) {
   if (!name) return res.status(400).json({ error: "Name is required." });
   if (!isEmail(email)) return res.status(400).json({ error: "A valid email is required." });
 
-  let subject, rows;
+  // Per-type fields
+  let subject, rows, fields;
   if (type === "waitlist") {
-    const church = String(body.church || "").trim().slice(0, 160);
+    const church = String(body.church || "").trim().slice(0, 160) || "—";
     subject = `New Member App waitlist signup — ${name}`;
-    rows = row("Name", name) + row("Email", email) + row("Church", church || "—");
+    rows = row("Name", name) + row("Email", email) + row("Church", church);
+    fields = { Submission: "Member App waitlist", Name: name, Email: email, Church: church };
   } else {
-    const msgSubject = String(body.subject || "").trim().slice(0, 200);
+    const msgSubject = String(body.subject || "").trim().slice(0, 200) || "—";
     const message = String(body.message || "").trim().slice(0, 5000);
     if (!message) return res.status(400).json({ error: "Message is required." });
-    subject = `New contact message — ${name}${msgSubject ? ` · ${msgSubject}` : ""}`;
-    rows = row("Name", name) + row("Email", email) + row("Subject", msgSubject || "—") + row("Message", message);
+    subject = `New contact message — ${name}${msgSubject !== "—" ? ` · ${msgSubject}` : ""}`;
+    rows = row("Name", name) + row("Email", email) + row("Subject", msgSubject) + row("Message", message);
+    fields = { Submission: "Contact form", Name: name, Email: email, Subject: msgSubject, Message: message };
   }
 
-  const heading = type === "waitlist" ? "Member App waitlist signup" : "Contact form message";
-  const html = `<div style="max-width:560px;margin:0 auto;padding:24px">
-    <div style="font:600 12px/1 -apple-system,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#D6531F;margin-bottom:6px">Churchora</div>
-    <h2 style="font:600 20px/1.3 -apple-system,system-ui,sans-serif;color:#111;margin:0 0 16px">${esc(heading)}</h2>
-    <table style="border-collapse:collapse;width:100%">${rows}</table>
-    <p style="font:12px/1.5 -apple-system,system-ui,sans-serif;color:#aaa;margin-top:20px;border-top:1px solid #eee;padding-top:14px">Sent from churchora2.vercel.app</p>
-  </div>`;
+  const to = process.env.NOTIFY_TO || DEFAULT_TO;
+  const apiKey = process.env.RESEND_API_KEY;
 
   try {
-    const r = await fetch(RESEND_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: process.env.NOTIFY_FROM || DEFAULT_FROM,
-        to: [process.env.NOTIFY_TO || DEFAULT_TO],
-        reply_to: email,
-        subject,
-        html,
-      }),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
+    // ── Path 1: Resend (if configured) ──
+    if (apiKey) {
+      const heading = type === "waitlist" ? "Member App waitlist signup" : "Contact form message";
+      const html = `<div style="max-width:560px;margin:0 auto;padding:24px">
+        <div style="font:600 12px/1 -apple-system,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#D6531F;margin-bottom:6px">Churchora</div>
+        <h2 style="font:600 20px/1.3 -apple-system,system-ui,sans-serif;color:#111;margin:0 0 16px">${esc(heading)}</h2>
+        <table style="border-collapse:collapse;width:100%">${rows}</table>
+        <p style="font:12px/1.5 -apple-system,system-ui,sans-serif;color:#aaa;margin-top:20px;border-top:1px solid #eee;padding-top:14px">Sent from churchora2.vercel.app</p>
+      </div>`;
+      const r = await fetch(RESEND_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: process.env.NOTIFY_FROM || DEFAULT_FROM, to: [to], reply_to: email, subject, html }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) return res.status(200).json({ ok: true, via: "resend", id: data.id || null });
       return res.status(502).json({ error: "Could not send the email.", detail: data.message || data.name || null });
     }
-    return res.status(200).json({ ok: true, id: data.id || null });
+
+    // ── Path 2: FormSubmit (keyless fallback) ──
+    const r = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(to), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ _subject: subject, _captcha: "false", _template: "table", _replyto: email, ...fields }),
+    });
+    const data = await r.json().catch(() => ({}));
+    const ok = r.ok && (data.success === true || data.success === "true");
+    if (ok) return res.status(200).json({ ok: true, via: "formsubmit" });
+    return res.status(502).json({ error: "Could not send the email.", detail: data.message || ("HTTP " + r.status) });
   } catch (err) {
     return res.status(500).json({ error: "Email send failed.", detail: String((err && err.message) || err) });
   }
