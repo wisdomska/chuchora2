@@ -10,6 +10,58 @@ function Container({ children, style, narrow }) {
   );
 }
 
+/* ── Continuous scroll-scrub ──
+   Every registered block scales in from the bottom, sits full through the
+   middle of the viewport, and scales out toward the top. One shared rAF loop
+   measures each block's *untransformed* outer box and writes scale/opacity to
+   an inner wrapper — no measurement feedback, and perfectly in sync with the
+   smooth scroll so the motion never visibly starts or stops. */
+const _sfxItems = new Set();
+let _sfxRunning = false;
+function _sfxFrame() {
+  const el = document.getElementById("site-scroll");
+  if (!el || _sfxItems.size === 0) { _sfxRunning = false; return; }
+  const cRect = el.getBoundingClientRect();
+  const cTop = cRect.top, vh = cRect.height || 1;
+  const RAMP = 0.34; // fraction of the viewport over which a block eases in/out
+  const reads = [];
+  for (const it of _sfxItems) {
+    const outer = it.outer.current, inner = it.inner.current;
+    if (!outer || !inner) continue;
+    const r = outer.getBoundingClientRect();
+    reads.push({ inner, top: (r.top - cTop) / vh, bot: (r.bottom - cTop) / vh, it });
+  }
+  for (const d of reads) {
+    const fEnter = Math.min(Math.max((1 - d.top) / RAMP, 0), 1); // grows as it rises from the bottom
+    const fExit  = Math.min(Math.max(d.bot / RAMP, 0), 1);        // shrinks as it leaves past the top
+    const f = Math.min(fEnter, fExit);
+    const s = d.it.minScale + (1 - d.it.minScale) * f;
+    const o = d.it.minOpacity + (1 - d.it.minOpacity) * f;
+    d.inner.style.transform = "scale(" + s.toFixed(4) + ") translateZ(0)";
+    d.inner.style.opacity = o.toFixed(3);
+  }
+  requestAnimationFrame(_sfxFrame);
+}
+function _sfxStart() { if (!_sfxRunning) { _sfxRunning = true; requestAnimationFrame(_sfxFrame); } }
+
+function ScrollFx({ children, id, style, padding, minScale = 0.88, minOpacity = 0 }) {
+  const outer = React.useRef(null);
+  const inner = React.useRef(null);
+  React.useEffect(() => {
+    const item = { outer, inner, minScale, minOpacity };
+    _sfxItems.add(item);
+    _sfxStart();
+    return () => { _sfxItems.delete(item); };
+  }, [minScale, minOpacity]);
+  return (
+    <div ref={outer} id={id} style={{ padding, ...style }}>
+      <div ref={inner} style={{ transformOrigin: "center center", willChange: "transform, opacity" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /* ── Scroll-animation helpers ── */
 function useReveal(threshold = 0.09) {
   const ref = React.useRef(null);
@@ -25,67 +77,16 @@ function useReveal(threshold = 0.09) {
   return [ref, visible];
 }
 
-function Reveal({ children, delay = 0, distance = 40, style, className }) {
-  const [ref, visible] = useReveal(0.08);
-  return (
-    <div ref={ref} className={className} style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? "none" : `translateY(${distance}px) scale(0.96)`,
-      transition: `opacity .8s ${delay}s cubic-bezier(.22,.61,.36,1), transform .8s ${delay}s cubic-bezier(.22,.61,.36,1)`,
-      willChange: "opacity, transform",
-      ...style,
-    }}>{children}</div>
-  );
+/* Reveal is now a passthrough — the continuous ScrollFx scrub owns all
+   entrance/exit motion, so individual blocks no longer self-animate (which
+   would fight the scrub and create visible start/stop transitions). */
+function Reveal({ children, style, className }) {
+  return <div className={className} style={style}>{children}</div>;
 }
 
+/* A page section that scales in from the bottom and out toward the top. */
 function AnimSection({ id, children, style, padding }) {
-  const outerRef  = React.useRef(null);
-  const [scale,    setScale]    = React.useState(1);
-  const [opacity,  setOpacity]  = React.useState(1);
-  const [revealed, setRevealed] = React.useState(false);
-
-  React.useEffect(() => {
-    const el = document.getElementById("site-scroll");
-    if (!el) return;
-
-    // Appear: reveal when entering viewport
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) setRevealed(true);
-    }, { threshold: 0.06, root: el });
-    if (outerRef.current) obs.observe(outerRef.current);
-
-    // Exit: scale down to 0.70 as it scrolls above the viewport
-    const update = () => {
-      if (!outerRef.current) return;
-      const rect  = outerRef.current.getBoundingClientRect();
-      const cRect = el.getBoundingClientRect();
-      const above = Math.max(0, (cRect.top + 60) - rect.top);
-      const pct   = Math.min(above / Math.max(rect.height * 0.6, 1), 1);
-      setScale(1 - pct * 0.30);          // 1 → 0.70
-      setOpacity(1 - pct * 0.50);        // 1 → 0.50
-    };
-    el.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => { obs.disconnect(); el.removeEventListener("scroll", update); };
-  }, []);
-
-  return (
-    <div ref={outerRef} style={{
-      transform:       `scale(${scale}) translateZ(0)`,
-      transformOrigin: "center center",
-      transition:      "transform .05s linear, opacity .05s linear",
-      opacity,
-      willChange:      "transform, opacity",
-    }}>
-      <section id={id} style={{
-        padding:   padding || "80px 0",
-        opacity:   revealed ? 1 : 0,
-        transform: revealed ? "none" : "translateY(52px) scale(0.96)",
-        transition: "opacity .85s cubic-bezier(.22,.61,.36,1), transform .85s cubic-bezier(.22,.61,.36,1)",
-        ...style,
-      }}>{children}</section>
-    </div>
-  );
+  return <ScrollFx id={id} padding={padding || "80px 0"} style={style}>{children}</ScrollFx>;
 }
 
 /* ── Site Header ── */
@@ -963,14 +964,14 @@ function MarketingSite({ go, user, onSignIn, goToSettings, theme, setTheme, mode
   return (
     <div id="site-scroll" className="scroll-area" style={{ height: "100%", overflowY: "auto", background: "var(--page)" }}>
       <SiteHeader go={go} user={user} onSignIn={onSignIn} goToSettings={goToSettings} scrollTo={scrollToSection} />
-      <Hero go={go} scrollY={scrollY} />
-      <TrustStrip />
+      <ScrollFx><Hero go={go} scrollY={scrollY} /></ScrollFx>
+      <ScrollFx><TrustStrip /></ScrollFx>
       <Features />
       <SermonShowcase go={go} />
       <MemberAppShowcase />
       <Pricing go={go} />
       <ContactSection />
-      <SiteFooter />
+      <ScrollFx><SiteFooter /></ScrollFx>
     </div>
   );
 }
