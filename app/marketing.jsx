@@ -625,15 +625,15 @@ function WaitlistModal({ onClose }) {
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Your name</label>
-              <input value={form.name} onChange={handle("name")} placeholder="Adwoa Mensah" className="field" autoComplete="name" />
+              <input name="name" value={form.name} onChange={handle("name")} placeholder="Adwoa Mensah" className="field" autoComplete="name" />
             </div>
             <div>
               <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Email address</label>
-              <input type="email" value={form.email} onChange={handle("email")} placeholder="you@church.org" className="field" autoComplete="email" />
+              <input type="email" name="email" value={form.email} onChange={handle("email")} placeholder="you@church.org" className="field" autoComplete="email" />
             </div>
             <div>
               <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Church</label>
-              <input value={form.church} onChange={handle("church")} placeholder="Grace Chapel International" className="field" />
+              <input name="organization" value={form.church} onChange={handle("church")} placeholder="Grace Chapel International" className="field" autoComplete="organization" />
             </div>
             {/* honeypot — hidden from humans */}
             <input value={company} onChange={e => setCompany(e.target.value)} tabIndex={-1} autoComplete="off"
@@ -829,20 +829,20 @@ function ContactSection() {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 18 }}>
                 <div>
                   <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Your name</label>
-                  <input value={form.name} onChange={handle("name")} placeholder="Adwoa Mensah" className="field" required />
+                  <input name="name" value={form.name} onChange={handle("name")} placeholder="Adwoa Mensah" className="field" autoComplete="name" required />
                 </div>
                 <div>
                   <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Email address</label>
-                  <input type="email" value={form.email} onChange={handle("email")} placeholder="you@church.org" className="field" required />
+                  <input type="email" name="email" value={form.email} onChange={handle("email")} placeholder="you@church.org" className="field" autoComplete="email" required />
                 </div>
               </div>
               <div>
                 <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Subject</label>
-                <input value={form.subject} onChange={handle("subject")} placeholder="How can we help?" className="field" />
+                <input name="contact-subject" value={form.subject} onChange={handle("subject")} placeholder="How can we help?" className="field" />
               </div>
               <div>
                 <label className="eyebrow" style={{ display: "block", marginBottom: 7 }}>Message</label>
-                <textarea value={form.message} onChange={handle("message")} rows={5} placeholder="Tell us more…" className="field" required />
+                <textarea name="contact-message" value={form.message} onChange={handle("message")} rows={5} placeholder="Tell us more…" className="field" required />
               </div>
               {error && (
                 <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "11px 14px", background: "var(--danger-tint)", borderRadius: "var(--r-sm)", color: "var(--danger)", fontSize: ".87rem" }}>

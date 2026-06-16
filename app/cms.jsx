@@ -57,7 +57,7 @@ function CmsTopbar({ title, sub, action }) {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ position: "relative" }}>
           <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-subtle)" }}><CIcon name="search" size={16} /></span>
-          <input placeholder="Search…" className="field" style={{ height: 40, width: 220, paddingLeft: 34, fontSize: ".9rem" }} />
+          <input type="search" placeholder="Search…" autoComplete="off" className="field" style={{ height: 40, width: 220, paddingLeft: 34, fontSize: ".9rem" }} />
         </div>
         <span style={{ position: "relative", width: 40, height: 40, borderRadius: "50%", background: "var(--surface-2)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>
           <CIcon name="bell" size={18} />
@@ -200,7 +200,7 @@ function CmsMembers() {
         ))}
         <div style={{ position: "relative", marginLeft: "auto" }}>
           <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-subtle)" }}><CIcon name="search" size={16} /></span>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Find a member…" className="field" style={{ height: 40, width: 240, paddingLeft: 34, fontSize: ".9rem" }} />
+          <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Find a member…" autoComplete="off" className="field" style={{ height: 40, width: 240, paddingLeft: 34, fontSize: ".9rem" }} />
         </div>
       </div>
       <div className="card" style={{ borderRadius: "var(--r-md)", overflow: "hidden" }}>

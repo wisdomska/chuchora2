@@ -223,7 +223,7 @@ function MemberVerses() {
       <div style={{ padding: "0 20px 8px", display: "flex", gap: 8 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-subtle)" }}><MIcon name="search" size={17} /></span>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by reference…" className="field" style={{ paddingLeft: 38, height: 42 }} />
+          <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search by reference…" autoComplete="off" className="field" style={{ paddingLeft: 38, height: 42 }} />
         </div>
         <select value={tr} onChange={e => setTr(e.target.value)} className="field" style={{ width: 86, height: 42, padding: "0 8px" }}>
           {CH.translations.map(t => <option key={t}>{t}</option>)}

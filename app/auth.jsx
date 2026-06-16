@@ -229,14 +229,14 @@ function AuthScreen({ onAuth, initialMode = "login", onBack }) {
                 <label className="eyebrow" style={{ display:"block", marginBottom:7 }}>Your name</label>
                 <div style={{ position:"relative" }}>
                   <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", color:"var(--text-subtle)" }}><AIcon name="user" size={17} /></span>
-                  <input value={name} onChange={e => { setName(e.target.value); clearErr(); }}
+                  <input name="name" value={name} onChange={e => { setName(e.target.value); clearErr(); }}
                     placeholder="Adwoa Mensah" className="field" style={{ paddingLeft:40 }} autoComplete="name" />
                 </div>
               </div>
               <div>
                 <label className="eyebrow" style={{ display:"block", marginBottom:7 }}>Church name</label>
-                <input value={church} onChange={e => setChurch(e.target.value)}
-                  placeholder="Grace Chapel International" className="field" />
+                <input name="organization" value={church} onChange={e => setChurch(e.target.value)}
+                  placeholder="Grace Chapel International" className="field" autoComplete="organization" />
               </div>
             </>)}
 

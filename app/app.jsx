@@ -218,6 +218,64 @@ function App() {
     if (surface !== "cms") setCmsOpenTo("dashboard");
   }, [surface]);
 
+  /* ── App-wide autofill ──
+     Remembers every text field's last value (keyed by its `name`) and
+     pre-fills empty fields on load and whenever new fields mount (modals,
+     surface changes). Passwords, the honeypot, and autocomplete="off" fields
+     are never stored. Values inject via the native setter + an input event so
+     controlled React inputs pick them up. */
+  React.useEffect(() => {
+    const PREFIX = "churchora.af.";
+    const keyFor = (el) => {
+      if (!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) return null;
+      const type = (el.type || "text").toLowerCase();
+      if (["password", "checkbox", "radio", "hidden", "file", "submit", "button", "image", "range", "color"].includes(type)) return null;
+      const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+      if (ac === "off" || /password/.test(ac)) return null;
+      if (/pass(word)?/i.test(el.name || "")) return null;
+      const k = el.name || el.id;
+      return k || null;
+    };
+    const save = (el) => {
+      const k = keyFor(el); if (!k) return;
+      try {
+        if (el.value) localStorage.setItem(PREFIX + k, String(el.value).slice(0, 1000));
+        else localStorage.removeItem(PREFIX + k);
+      } catch (e) {}
+    };
+    const inject = (el, val) => {
+      const proto = el.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+      setter.call(el, val);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const restore = (root) => {
+      const scope = root && root.querySelectorAll ? root : document;
+      scope.querySelectorAll("input, textarea").forEach((el) => {
+        const k = keyFor(el); if (!k || el.value) return; // never clobber typed/default values
+        let saved = null;
+        try { saved = localStorage.getItem(PREFIX + k); } catch (e) {}
+        if (saved) inject(el, saved);
+      });
+    };
+
+    const onInput = (e) => save(e.target);
+    document.addEventListener("input", onInput, true);
+    const t0 = setTimeout(() => restore(document), 80);
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => {
+          if (n.nodeType !== 1) return;
+          if ((n.matches && n.matches("input, textarea")) || (n.querySelector && n.querySelector("input, textarea"))) {
+            restore(n);
+          }
+        });
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => { document.removeEventListener("input", onInput, true); obs.disconnect(); clearTimeout(t0); };
+  }, []);
+
   /* Navigate — "site" is always public; anything else requires auth */
   const go = React.useCallback((dest) => {
     if (dest === "site") { setSurface("site"); return; }
